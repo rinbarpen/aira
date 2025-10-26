@@ -60,7 +60,6 @@ uploads/
 
 # ASR/Whisper model cache
 .cache/
-models/
 *.pt
 *.bin
 

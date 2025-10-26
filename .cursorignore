@@ -36,7 +36,6 @@ logs/
 *.log
 
 # 模型文件和缓存
-models/
 .cache/
 *.pt
 *.bin
