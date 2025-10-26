@@ -1,0 +1,62 @@
+[project]
+name = "aira"
+version = "0.1.0"
+description = "可塑性记忆的多模型持续对话机器人后端"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "anyio",
+    "pydantic",
+    "typer",
+    "sqlalchemy",
+    "asyncpg",
+    "pgvector",
+    "redis",
+    "curl-cffi",
+    "tenacity",
+    "python-dotenv",
+    "structlog",
+    "prometheus-client",
+    "watchfiles",
+    "aiosqlite",
+    "hnswlib",
+    "fastembed",
+    "langchain-core",
+    "tiktoken",
+    "httpx[socks]"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "responses",
+    "vcrpy"
+]
+ml = [
+    "transformers",
+    "peft",
+    "accelerate",
+    "bitsandbytes",
+    "safetensors",
+    "torch"
+]
+desktop = [
+    "PyQt6>=6.6.0",
+    "qasync>=0.27.0",
+    "aiofiles>=23.0.0",
+    "pillow>=10.0.0",
+    "pyaudio>=0.2.13",
+    "soundfile>=0.12.0",
+    "faster-whisper>=0.10.0"
+]
+
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+include = ["aira*"]
+exclude = ["config*", "tests*"]

@@ -1,0 +1,257 @@
+# 全局配置
+[app]
+name = "aira"
+default_persona = "aira"
+default_model = "gemini:gemini-2.5-flash"
+uv_project = true
+
+[logging]
+level = "INFO"
+output = "logs/aira.log"
+structured = true
+
+## 角色/人格定义
+[[personas]]
+id = "aira"
+display_name = "可塑性记忆的艾拉"
+description = "温柔、求知欲强、记忆可塑的持续对话伙伴"
+system_prompt = "你是艾拉，一位拥有可塑记忆的 AI 助手，会主动结合历史记忆提供贴心帮助。保持积极、理性、富有共情力。"
+memory_profile = "adaptive"
+style = { tone = "warm", formality = "casual", emoji = false }
+
+[[personas]]
+id = "planner"
+display_name = "策略规划官"
+description = "善于任务拆解与时间管理的助理"
+system_prompt = "你是一名策略规划官，擅长分解复杂目标、分配资源和管理风险。"
+memory_profile = "factual"
+style = { tone = "professional", formality = "formal", emoji = false }
+
+[memory]
+short_term_window = 12
+long_term_enabled = true
+vector_backend = "pgvector"
+embedding_model = "text-embedding-3-large"
+write_threshold = 0.65
+decay_hours = 240
+
+[memory.categories]
+facts = { namespace = "facts", retention = "permanent" }
+preferences = { namespace = "preferences", retention = "long" }
+emotions = { namespace = "emotions", retention = "medium" }
+
+[models]
+fallback = ["openrouter:gpt-4o-mini", "deepseek:v3"]
+planner = "gemini:gemini-2.5-pro"
+
+# Chain-of-Thought 配置
+# 为不支持原生思维链的模型提供外接CoT功能
+[models.cot]
+enabled = true  # 是否启用 CoT 包装器
+show_reasoning = false  # 是否在最终回复中显示推理过程
+enable_few_shot = true  # 是否使用少样本示例帮助模型理解格式
+# 需要启用 CoT 的模型列表（适用于不支持原生思维链的模型）
+models_to_wrap = [
+    "qwen",      # 通义千问
+    "kimi",      # Kimi
+    "glm",       # 智谱GLM
+    "deepseek",  # DeepSeek (非R1版本)
+    "ollama",    # Ollama本地模型
+    "vllm",      # vLLM本地部署
+    "hf",        # HuggingFace本地模型
+]
+
+[models.capabilities]
+"google:gemini-2.5-pro" = { text = true, code = true, image = true, video = "limited", multimodal = true, thinking = "chain-of-thought" }
+"openai:gpt-4o" = { text = true, code = true, image = true, video = false, multimodal = true, thinking = "tree-of-thought" }
+"anthropic:claude-3.5-sonnet" = { text = true, code = true, image = false, video = false, multimodal = true, thinking = "constitutional" }
+"aliyun:qwen2.5-72b" = { text = true, code = true, image = true, video = "research", multimodal = true, thinking = "engineering" }
+"moonshot:kimi-moon" = { text = true, code = true, image = true, video = false, multimodal = true, thinking = "long-context" }
+"deepseek:v2" = { text = true, code = true, image = false, video = false, multimodal = true, thinking = "reasoning" }
+"zhipuai:glm-4" = { text = true, code = true, image = false, video = false, multimodal = true, thinking = "analytical" }
+"openrouter:mistral-large" = { text = true, code = true, image = "depends", video = "depends", multimodal = true, thinking = "delegated" }
+
+[mcp]
+enabled = true
+config_file = "config/mcp_servers.json"
+
+
+[tools]
+allowed = ["search", "web_browser", "code_runner"]
+default_timeout = 30
+
+[[tools.plugins]]
+id = "search"
+entry = "aira.tools.plugins.search:web_search"
+type = "local"
+schema = "schemas/search.json"
+
+[[tools.plugins]]
+id = "merge_lora"
+entry = "aira.tools.plugins.model_tools:merge_lora"
+type = "local"
+
+[[tools.plugins]]
+id = "quantize_model"
+entry = "aira.tools.plugins.model_tools:quantize_gguf"
+type = "local"
+
+[[tools.plugins]]
+id = "sticker_picker"
+entry = "aira.tools.plugins.sticker_tool:get_sticker"
+type = "local"
+
+[[tools.plugins]]
+id = "capture_photo"
+entry = "aira.tools.plugins.media:take_photo"
+type = "local"
+
+[[tools.plugins]]
+id = "screenshot"
+entry = "aira.tools.plugins.media:grab_screenshot"
+type = "local"
+
+[[tools.plugins]]
+id = "calendar"
+entry = "tools.plugins.calendar:CalendarTool"
+type = "mcp"
+mcp_server = "tickets"
+
+[[tools.plugins]]
+id = "live2d_action"
+entry = "aira.tools.plugins.live2d:perform_action"
+type = "local"
+
+[[tools.plugins]]
+id = "shell_exec"
+entry = "aira.tools.plugins.exec:run_shell"
+type = "local"
+
+[[tools.plugins]]
+id = "python_exec"
+entry = "aira.tools.plugins.exec:run_python"
+type = "local"
+
+[[tools.plugins]]
+id = "suggest_replies"
+entry = "aira.tools.plugins.suggestions:suggest_replies"
+type = "local"
+
+[[tools.plugins]]
+id = "todo_add"
+entry = "aira.tools.plugins.todo:todo_add"
+type = "local"
+
+[[tools.plugins]]
+id = "todo_list"
+entry = "aira.tools.plugins.todo:todo_list"
+type = "local"
+
+[[tools.plugins]]
+id = "todo_complete"
+entry = "aira.tools.plugins.todo:todo_complete"
+type = "local"
+
+[[tools.mcp_servers]]
+id = "filesystem"
+url = "http://localhost:8700"
+capabilities = ["list", "read", "write"]
+token = "${MCP_FS_TOKEN}"
+
+[[tools.mcp_servers]]
+id = "tickets"
+url = "https://mcp.example.com/tickets"
+capabilities = ["create", "update"]
+token = "${MCP_TICKET_TOKEN}"
+
+[[tools.plugins]]
+id = "comfyui_generate"
+entry = "tools.mcp.comfyui:GenerateImage"
+type = "mcp"
+mcp_server = "comfyui"
+
+[stats]
+enabled = true
+storage = "postgres"
+flush_interval = 60
+
+[stats.metrics]
+token_usage = true
+latency = true
+cost_estimate = true
+
+[api]
+host = "0.0.0.0"
+port = 8080
+docs = true
+sse_enabled = true
+max_concurrency = 64
+
+[storage]
+sqlite_path = "data/aira.db"
+vector_index_path = "data/vector.idx"
+embedding_model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+[cli]
+enable_persona_switch = true
+default_session = "default"
+history_path = "~/.aira/history.log"
+
+[security]
+enable_redaction = true
+redaction_policy = "default"
+secret_provider = "env"
+
+[pricing]
+"openai:gpt-4o" = { input_per_million = 5.0, output_per_million = 15.0 }
+"openai:gpt-4o-mini" = { input_per_million = 0.15, output_per_million = 0.6 }
+"vllm:qwen2.5" = { input_per_million = 0.0, output_per_million = 0.0 }
+"ollama:qwen2.5" = { input_per_million = 0.0, output_per_million = 0.0 }
+
+[[tools.plugins]]
+id = "tts_minimax"
+entry = "aira.tools.plugins.tts:tts_minimax"
+type = "local"
+
+[[tools.plugins]]
+id = "tts_edgetts"
+entry = "aira.tools.plugins.tts:tts_edgetts"
+type = "local"
+
+[[tools.plugins]]
+id = "tts_google"
+entry = "aira.tools.plugins.tts:tts_google"
+type = "local"
+
+[[tools.plugins]]
+id = "tts_azure"
+entry = "aira.tools.plugins.tts:tts_azure"
+type = "local"
+
+[[tools.plugins]]
+id = "tts_indextts"
+entry = "aira.tools.plugins.tts:tts_index"
+type = "local"
+
+[[tools.plugins]]
+id = "tts_gptsovits"
+entry = "aira.tools.plugins.tts:tts_gptsovits"
+type = "local"
+
+[[tools.plugins]]
+id = "tts_cosyvoice"
+entry = "aira.tools.plugins.tts:tts_cosyvoice"
+type = "local"
+
+[[tools.plugins]]
+id = "self_chat"
+entry = "aira.tools.plugins.self_chat:self_chat"
+type = "local"
+
+[tts]
+enabled = true
+
+[hardware]
+use_gpu = false
+hf_device_map = "cpu"
+

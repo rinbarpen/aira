@@ -1,0 +1,29 @@
+{
+  "servers": [
+    {
+      "id": "filesystem",
+      "url": "http://localhost:8700",
+      "capabilities": ["list", "read", "write"],
+      "token": "${MCP_FS_TOKEN}"
+    },
+    {
+      "id": "tickets",
+      "url": "https://mcp.example.com/tickets",
+      "capabilities": ["create", "update"],
+      "token": "${MCP_TICKET_TOKEN}"
+    },
+    {
+      "id": "comfyui",
+      "url": "http://localhost:8188/mcp",
+      "capabilities": ["generate"],
+      "token": "${MCP_COMFY_TOKEN}"
+    }
+  ],
+  "groups": [
+    {
+      "id": "default",
+      "enabled": true,
+      "servers": ["filesystem", "tickets", "comfyui"]
+    }
+  ]
+}
