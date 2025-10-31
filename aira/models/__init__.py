@@ -14,77 +14,109 @@ from aira.models.adapters.qwen import QwenAdapter
 from aira.models.adapters.kimi import KimiAdapter
 from aira.models.adapters.glm import GLMAdapter
 from aira.models.adapters.deepseek import DeepSeekAdapter
-from aira.models.gateway import ModelGateway, ModelAdapter
+from aira.models.cot_embedding import CoTEmbeddingWrapper, CoTGeneratorOptions
 from aira.models.cot_wrapper import CoTWrapper
+from aira.models.gateway import ModelGateway, ModelAdapter
+
+
+def _normalize_provider_name(model_name: str) -> str:
+    if not model_name:
+        return ""
+    return model_name.split(":", 1)[0]
 
 
 def build_gateway() -> ModelGateway:
     config = get_app_config()
     gateway = ModelGateway()
 
-    enabled_models = [config["app"].get("default_model")]
-    enabled_models.extend(config["models"].get("fallback", []))
-    planner_model = config["models"].get("planner")
-    if planner_model:
-        enabled_models.append(planner_model)
+    models_config = config.get("models", {})
 
-    # 读取 CoT 配置
-    cot_config = config.get("models", {}).get("cot", {})
+    cot_config = models_config.get("cot", {})
     cot_enabled = cot_config.get("enabled", False)
     cot_show_reasoning = cot_config.get("show_reasoning", False)
     cot_enable_few_shot = cot_config.get("enable_few_shot", True)
-    models_to_wrap = set(cot_config.get("models_to_wrap", []))
+    cot_models_to_wrap = set(cot_config.get("models_to_wrap", []))
 
-    def maybe_wrap_with_cot(adapter: ModelAdapter) -> ModelAdapter:
-        """根据配置决定是否用 CoT 包装适配器。"""
-        if cot_enabled and adapter.name in models_to_wrap:
-            return CoTWrapper(
+    cot_embedding_config = models_config.get("cot_embedding", {})
+    cot_embedding_enabled = cot_embedding_config.get("enabled", False)
+    cot_embedding_targets = {
+        _normalize_provider_name(name) for name in cot_embedding_config.get("models_to_wrap", [])
+    }
+    cot_embedding_generator = cot_embedding_config.get("generator", "deepseek")
+    generator_provider = _normalize_provider_name(cot_embedding_generator)
+    generator_options_kwargs = {}
+    if cot_embedding_config.get("generator_model"):
+        generator_options_kwargs["model"] = cot_embedding_config.get("generator_model")
+    if cot_embedding_config.get("generator_max_tokens") is not None:
+        generator_options_kwargs["max_tokens"] = cot_embedding_config.get("generator_max_tokens")
+    if cot_embedding_config.get("generator_temperature") is not None:
+        generator_options_kwargs["temperature"] = cot_embedding_config.get("generator_temperature")
+    cot_generator_options = (
+        CoTGeneratorOptions(**generator_options_kwargs) if generator_options_kwargs else None
+    )
+    cot_embedding_show_reasoning = cot_embedding_config.get("show_reasoning", False)
+    cot_prompt_template = cot_embedding_config.get("cot_prompt_template")
+    cot_system_prompt_template = cot_embedding_config.get("system_prompt_template")
+
+    raw_adapters: dict[str, ModelAdapter] = {
+        "openai": OpenAIChatAdapter(),
+        "openai_compatible": OpenAICompatibleAdapter(),
+        "vllm": VllmOpenAIAdapter(),
+        "ollama": OllamaAdapter(),
+        "hf": HFLocalAdapter(),
+        "gemini": GeminiAdapter(),
+        "claude": AnthropicAdapter(),
+        "qwen": QwenAdapter(),
+        "kimi": KimiAdapter(),
+        "glm": GLMAdapter(),
+        "deepseek": DeepSeekAdapter(),
+    }
+
+    alias_map: dict[str, list[str]] = {
+        "openai": ["openai:"],
+        "openai_compatible": ["openai_compatible:", "compatible:"],
+        "vllm": ["vllm:"],
+        "ollama": ["ollama:"],
+        "hf": ["hf:"],
+        "gemini": ["gemini:"],
+        "claude": ["claude:"],
+        "qwen": ["qwen:"],
+        "kimi": ["kimi:"],
+        "glm": ["glm:"],
+        "deepseek": ["deepseek:"],
+    }
+
+    adapters: dict[str, ModelAdapter] = {}
+
+    for name, adapter in raw_adapters.items():
+        if cot_enabled and name in cot_models_to_wrap:
+            adapter = CoTWrapper(
                 adapter,
                 show_reasoning=cot_show_reasoning,
                 enable_few_shot=cot_enable_few_shot,
             )
-        return adapter
+        adapters[name] = adapter
 
-    # OpenAI 官方API（支持原生 reasoning，不需要包装）
-    gateway.register(OpenAIChatAdapter(), aliases=["openai:"])
-    
-    # OpenAI 兼容服务（通用适配器）
-    compatible_adapter = maybe_wrap_with_cot(OpenAICompatibleAdapter())
-    gateway.register(compatible_adapter, aliases=["openai_compatible:", "compatible:"])
-    
-    # vLLM OpenAI 兼容（保留向后兼容）
-    vllm_adapter = maybe_wrap_with_cot(VllmOpenAIAdapter())
-    gateway.register(vllm_adapter, aliases=["vllm:"])
-    
-    # Ollama
-    ollama_adapter = maybe_wrap_with_cot(OllamaAdapter())
-    gateway.register(ollama_adapter, aliases=["ollama:"])
-    
-    # HF 本地（Qwen/Llama + LoRA）
-    hf_adapter = maybe_wrap_with_cot(HFLocalAdapter())
-    gateway.register(hf_adapter, aliases=["hf:"])
-    
-    # Gemini (支持原生思维链，不需要包装)
-    gateway.register(GeminiAdapter(), aliases=["gemini:"])
-    
-    # Claude (支持原生思维链，不需要包装)
-    gateway.register(AnthropicAdapter(), aliases=["claude:"])
-    
-    # Qwen（Dashscope）
-    qwen_adapter = maybe_wrap_with_cot(QwenAdapter())
-    gateway.register(qwen_adapter, aliases=["qwen:"])
-    
-    # Kimi
-    kimi_adapter = maybe_wrap_with_cot(KimiAdapter())
-    gateway.register(kimi_adapter, aliases=["kimi:"])
-    
-    # GLM
-    glm_adapter = maybe_wrap_with_cot(GLMAdapter())
-    gateway.register(glm_adapter, aliases=["glm:"])
-    
-    # DeepSeek
-    deepseek_adapter = maybe_wrap_with_cot(DeepSeekAdapter())
-    gateway.register(deepseek_adapter, aliases=["deepseek:"])
+    generator_adapter = raw_adapters.get(generator_provider) if cot_embedding_enabled else None
+    if cot_embedding_enabled and generator_adapter is None:
+        raise KeyError(f"未找到用于 CoT 嵌入的生成适配器: {cot_embedding_generator}")
+
+    if cot_embedding_enabled:
+        assert generator_adapter is not None  # 已在上方检查，此处不应为None
+        for name, adapter in list(adapters.items()):
+            if name not in cot_embedding_targets:
+                continue
+            adapters[name] = CoTEmbeddingWrapper(
+                adapter,
+                generator_adapter,
+                generator_options=cot_generator_options,
+                cot_prompt_template=cot_prompt_template,
+                system_prompt_template=cot_system_prompt_template,
+                show_reasoning=cot_embedding_show_reasoning,
+            )
+
+    for name, adapter in adapters.items():
+        gateway.register(adapter, aliases=alias_map.get(name, []))
 
     return gateway
 

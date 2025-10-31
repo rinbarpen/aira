@@ -26,9 +26,6 @@ dependencies = [
     "langchain-core",
     "tiktoken",
     "httpx[socks]",
-    "qasync>=0.28.0",
-    "faiss-cpu>=1.12.0",
-    "sqlmodel>=0.0.27",
 ]
 
 [project.optional-dependencies]

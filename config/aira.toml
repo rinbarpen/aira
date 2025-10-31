@@ -67,6 +67,18 @@ models_to_wrap = [
     "hf",        # HuggingFace本地模型
 ]
 
+[models.cot_embedding]
+enabled = true  # 是否启用外部思维链嵌入
+models_to_wrap = ["openai"]  # 默认为 OpenAI 模型启用外部 CoT
+generator = "deepseek"  # 使用 DeepSeek 生成思维链
+generator_model = "deepseek-chat"  # DeepSeek 推理模型
+generator_temperature = 0.3  # 生成思维链的温度
+generator_max_tokens = 1024  # 思维链最大 tokens
+show_reasoning = false  # 最终回复是否附带外部推理链
+# 可选自定义模板
+# cot_prompt_template = "..."
+# system_prompt_template = "..."
+
 [models.capabilities]
 "google:gemini-2.5-pro" = { text = true, code = true, image = true, video = "limited", multimodal = true, thinking = "chain-of-thought" }
 "openai:gpt-4o" = { text = true, code = true, image = true, video = false, multimodal = true, thinking = "tree-of-thought" }
