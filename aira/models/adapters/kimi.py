@@ -16,10 +16,11 @@ class KimiAdapter(ModelAdapter):
     def __init__(self, base_url: str | None = None, api_key: str | None = None) -> None:
         self._base_url = base_url or os.environ.get("KIMI_BASE_URL", "https://api.moonshot.cn/v1")
         self._api_key = api_key or os.environ.get("KIMI_API_KEY", "")
-        if not self._api_key:
-            raise RuntimeError("KIMI_API_KEY 未配置")
 
     async def generate(self, prompt: str, **kwargs: Any) -> SimpleCompletionResult:
+        if not self._api_key:
+            raise RuntimeError("KIMI_API_KEY 未配置")
+        
         model = kwargs.get("model", os.environ.get("KIMI_MODEL", "kimi-moon-2-5"))
         messages = kwargs.get("messages") or [{"role": "user", "content": prompt}]
         payload = {

@@ -16,10 +16,11 @@ class GLMAdapter(ModelAdapter):
     def __init__(self, base_url: str | None = None, api_key: str | None = None) -> None:
         self._base_url = base_url or os.environ.get("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
         self._api_key = api_key or os.environ.get("GLM_API_KEY", "")
-        if not self._api_key:
-            raise RuntimeError("GLM_API_KEY 未配置")
 
     async def generate(self, prompt: str, **kwargs: Any) -> SimpleCompletionResult:
+        if not self._api_key:
+            raise RuntimeError("GLM_API_KEY 未配置")
+        
         model = kwargs.get("model", os.environ.get("GLM_MODEL", "glm-4-air"))
         messages = kwargs.get("messages") or [{"role": "user", "content": prompt}]
         payload = {

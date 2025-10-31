@@ -34,9 +34,14 @@ class ConversationStorage:
                     content TEXT NOT NULL,
                     content_type TEXT DEFAULT 'text',
                     metadata TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    INDEX idx_session (session_id)
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            
+            # 创建索引
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_session 
+                ON conversations (session_id)
             """)
             
             conn.execute("""

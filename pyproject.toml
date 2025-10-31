@@ -25,7 +25,10 @@ dependencies = [
     "fastembed",
     "langchain-core",
     "tiktoken",
-    "httpx[socks]"
+    "httpx[socks]",
+    "qasync>=0.28.0",
+    "faiss-cpu>=1.12.0",
+    "sqlmodel>=0.0.27",
 ]
 
 [project.optional-dependencies]
@@ -52,6 +55,22 @@ desktop = [
     "pyaudio>=0.2.13",
     "soundfile>=0.12.0",
     "faster-whisper>=0.10.0"
+]
+vision = [
+    "opencv-python>=4.8.0",
+    "mediapipe>=0.10.0",
+    "numpy>=1.24.0",
+]
+avatar = [
+    "aiohttp>=3.9.0",
+    "websockets>=12.0",
+    "pillow>=10.0.0",
+]
+social = [
+    "networkx>=3.0",
+]
+full = [
+    "aira[desktop,vision,avatar,social,ml]"
 ]
 
 [tool.uv]

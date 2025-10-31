@@ -35,10 +35,11 @@ class AnthropicAdapter(ModelAdapter):
         self._base_url = base_url or os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
         self._api_version = api_version or os.environ.get("ANTHROPIC_VERSION", "2023-06-01")
-        if not self._api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY 未配置")
 
     async def generate(self, prompt: str, **kwargs: Any) -> SimpleCompletionResult:
+        if not self._api_key:
+            raise RuntimeError("ANTHROPIC_API_KEY 未配置")
+        
         model = kwargs.get("model", os.environ.get("ANTHROPIC_MODEL", "claude-3-5-sonnet-20240620"))
         max_tokens = kwargs.get("max_tokens", 1024)
         temperature = kwargs.get("temperature", 0.7)

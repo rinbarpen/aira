@@ -164,5 +164,102 @@ class SqliteRepository:
             )
             await db.commit()
             return int(cur.lastrowid)
+    
+    async def get_usage_stats(self, days: int = 7) -> dict[str, Any]:
+        """获取使用统计
+        
+        Args:
+            days: 统计最近N天的数据
+            
+        Returns:
+            统计数据字典
+        """
+        await self.ensure_schema()
+        async with aiosqlite.connect(self._db_path) as db:
+            db.row_factory = aiosqlite.Row
+            
+            # 总体统计
+            cur = await db.execute("""
+                SELECT 
+                    COUNT(*) as total_requests,
+                    SUM(tokens_in) as total_tokens_in,
+                    SUM(tokens_out) as total_tokens_out,
+                    SUM(cost_usd) as total_cost
+                FROM usage_records
+                WHERE created_at >= datetime('now', '-' || ? || ' days')
+            """, (days,))
+            row = await cur.fetchone()
+            
+            # 按模型统计
+            cur = await db.execute("""
+                SELECT 
+                    model,
+                    COUNT(*) as request_count,
+                    SUM(tokens_in) as total_tokens_in,
+                    SUM(tokens_out) as total_tokens_out,
+                    SUM(cost_usd) as total_cost
+                FROM usage_records
+                WHERE created_at >= datetime('now', '-' || ? || ' days')
+                GROUP BY model
+                ORDER BY request_count DESC
+            """, (days,))
+            models = await cur.fetchall()
+            
+            return {
+                "total_requests": row["total_requests"] or 0,
+                "total_tokens": (row["total_tokens_in"] or 0) + (row["total_tokens_out"] or 0),
+                "total_cost": row["total_cost"] or 0.0,
+                "period_days": days,
+                "models_used": {m["model"]: dict(m) for m in models},
+            }
+    
+    async def get_recent_usage(self, limit: int = 50) -> list[dict[str, Any]]:
+        """获取最近的使用记录
+        
+        Args:
+            limit: 返回的记录数
+            
+        Returns:
+            记录列表
+        """
+        await self.ensure_schema()
+        async with aiosqlite.connect(self._db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cur = await db.execute("""
+                SELECT *
+                FROM usage_records
+                ORDER BY created_at DESC
+                LIMIT ?
+            """, (limit,))
+            rows = await cur.fetchall()
+            return [dict(r) for r in rows]
+    
+    async def get_session_stats(self, limit: int = 20) -> list[dict[str, Any]]:
+        """获取按会话分组的统计
+        
+        Args:
+            limit: 返回的会话数
+            
+        Returns:
+            会话统计列表
+        """
+        await self.ensure_schema()
+        async with aiosqlite.connect(self._db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cur = await db.execute("""
+                SELECT 
+                    session_id,
+                    COUNT(*) as request_count,
+                    SUM(tokens_in) as total_tokens_in,
+                    SUM(tokens_out) as total_tokens_out,
+                    SUM(cost_usd) as total_cost,
+                    MAX(created_at) as last_used
+                FROM usage_records
+                GROUP BY session_id
+                ORDER BY last_used DESC
+                LIMIT ?
+            """, (limit,))
+            rows = await cur.fetchall()
+            return [dict(r) for r in rows]
 
 

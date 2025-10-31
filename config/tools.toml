@@ -1,0 +1,158 @@
+# Aira 工具和插件配置
+
+[tools]
+# 允许使用的工具类型
+allowed = ["search", "web_browser", "code_runner"]
+# 默认超时时间（秒）
+default_timeout = 30
+
+# ============================================
+# 本地工具插件
+# ============================================
+
+[[plugins]]
+id = "search"
+entry = "aira.tools.plugins.search:web_search"
+type = "local"
+schema = "schemas/search.json"
+
+[[plugins]]
+id = "merge_lora"
+entry = "aira.tools.plugins.model_tools:merge_lora"
+type = "local"
+
+[[plugins]]
+id = "quantize_model"
+entry = "aira.tools.plugins.model_tools:quantize_gguf"
+type = "local"
+
+[[plugins]]
+id = "sticker_picker"
+entry = "aira.tools.plugins.sticker_tool:get_sticker"
+type = "local"
+
+[[plugins]]
+id = "capture_photo"
+entry = "aira.tools.plugins.media:take_photo"
+type = "local"
+
+[[plugins]]
+id = "screenshot"
+entry = "aira.tools.plugins.media:grab_screenshot"
+type = "local"
+
+[[plugins]]
+id = "live2d_action"
+entry = "aira.tools.plugins.live2d:perform_action"
+type = "local"
+
+[[plugins]]
+id = "shell_exec"
+entry = "aira.tools.plugins.exec:run_shell"
+type = "local"
+
+[[plugins]]
+id = "python_exec"
+entry = "aira.tools.plugins.exec:run_python"
+type = "local"
+
+[[plugins]]
+id = "suggest_replies"
+entry = "aira.tools.plugins.suggestions:suggest_replies"
+type = "local"
+
+[[plugins]]
+id = "todo_add"
+entry = "aira.tools.plugins.todo:todo_add"
+type = "local"
+
+[[plugins]]
+id = "todo_list"
+entry = "aira.tools.plugins.todo:todo_list"
+type = "local"
+
+[[plugins]]
+id = "todo_complete"
+entry = "aira.tools.plugins.todo:todo_complete"
+type = "local"
+
+# ============================================
+# TTS 工具插件
+# ============================================
+
+[[plugins]]
+id = "tts_minimax"
+entry = "aira.tools.plugins.tts:tts_minimax"
+type = "local"
+
+[[plugins]]
+id = "tts_edgetts"
+entry = "aira.tools.plugins.tts:tts_edgetts"
+type = "local"
+
+[[plugins]]
+id = "tts_google"
+entry = "aira.tools.plugins.tts:tts_google"
+type = "local"
+
+[[plugins]]
+id = "tts_azure"
+entry = "aira.tools.plugins.tts:tts_azure"
+type = "local"
+
+[[plugins]]
+id = "tts_indextts"
+entry = "aira.tools.plugins.tts:tts_index"
+type = "local"
+
+[[plugins]]
+id = "tts_gptsovits"
+entry = "aira.tools.plugins.tts:tts_gptsovits"
+type = "local"
+
+[[plugins]]
+id = "tts_cosyvoice"
+entry = "aira.tools.plugins.tts:tts_cosyvoice"
+type = "local"
+
+# ============================================
+# 其他工具插件
+# ============================================
+
+[[plugins]]
+id = "self_chat"
+entry = "aira.tools.plugins.self_chat:self_chat"
+type = "local"
+
+# ============================================
+# MCP 服务器配置
+# ============================================
+
+[[mcp_servers]]
+id = "filesystem"
+url = "http://localhost:8700"
+capabilities = ["list", "read", "write"]
+token = "${MCP_FS_TOKEN}"
+
+[[mcp_servers]]
+id = "tickets"
+url = "https://mcp.example.com/tickets"
+capabilities = ["create", "update"]
+token = "${MCP_TICKET_TOKEN}"
+
+# ============================================
+# MCP 工具插件
+# ============================================
+
+[[plugins]]
+id = "calendar"
+entry = "tools.plugins.calendar:CalendarTool"
+type = "mcp"
+mcp_server = "tickets"
+
+[[plugins]]
+id = "comfyui_generate"
+entry = "tools.mcp.comfyui:GenerateImage"
+type = "mcp"
+mcp_server = "comfyui"
+

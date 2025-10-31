@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from aira.core.config import get_app_config
 from aira.models.adapters.openai_chat import OpenAIChatAdapter
+from aira.models.adapters.openai_compatible import OpenAICompatibleAdapter
 from aira.models.adapters.ollama import OllamaAdapter
 from aira.models.adapters.vllm_openai import VllmOpenAIAdapter
 from aira.models.adapters.hf_local import HFLocalAdapter
@@ -44,11 +45,14 @@ def build_gateway() -> ModelGateway:
             )
         return adapter
 
-    # OpenAI 兼容（含官方与部分代理）
-    # OpenAI 支持原生 reasoning，不需要包装
+    # OpenAI 官方API（支持原生 reasoning，不需要包装）
     gateway.register(OpenAIChatAdapter(), aliases=["openai:"])
     
-    # vLLM OpenAI 兼容
+    # OpenAI 兼容服务（通用适配器）
+    compatible_adapter = maybe_wrap_with_cot(OpenAICompatibleAdapter())
+    gateway.register(compatible_adapter, aliases=["openai_compatible:", "compatible:"])
+    
+    # vLLM OpenAI 兼容（保留向后兼容）
     vllm_adapter = maybe_wrap_with_cot(VllmOpenAIAdapter())
     gateway.register(vllm_adapter, aliases=["vllm:"])
     

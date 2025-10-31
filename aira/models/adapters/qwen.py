@@ -16,10 +16,11 @@ class QwenAdapter(ModelAdapter):
     def __init__(self, base_url: str | None = None, api_key: str | None = None) -> None:
         self._base_url = base_url or os.environ.get("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
         self._api_key = api_key or os.environ.get("DASHSCOPE_API_KEY", "")
-        if not self._api_key:
-            raise RuntimeError("DASHSCOPE_API_KEY 未配置")
 
     async def generate(self, prompt: str, **kwargs: Any) -> SimpleCompletionResult:
+        if not self._api_key:
+            raise RuntimeError("DASHSCOPE_API_KEY 未配置")
+        
         model = kwargs.get("model", os.environ.get("QWEN_MODEL", "qwen-plus"))
         messages = kwargs.get("messages") or [{"role": "user", "content": prompt}]
         body = {

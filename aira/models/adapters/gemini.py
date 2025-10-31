@@ -16,10 +16,11 @@ class GeminiAdapter(ModelAdapter):
     def __init__(self, base_url: str | None = None, api_key: str | None = None) -> None:
         self._base_url = base_url or "https://generativelanguage.googleapis.com/v1beta"
         self._api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
-        if not self._api_key:
-            raise RuntimeError("GEMINI_API_KEY 未设置，无法调用 Gemini 接口")
 
     async def generate(self, prompt: str, **kwargs: Any) -> SimpleCompletionResult:
+        if not self._api_key:
+            raise RuntimeError("GEMINI_API_KEY 未设置，无法调用 Gemini 接口")
+        
         model = kwargs.get("model", os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"))
         messages = kwargs.get("messages") or [{"role": "user", "content": prompt}]
         contents = []

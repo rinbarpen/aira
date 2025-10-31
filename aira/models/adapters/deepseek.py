@@ -16,10 +16,11 @@ class DeepSeekAdapter(ModelAdapter):
     def __init__(self, base_url: str | None = None, api_key: str | None = None) -> None:
         self._base_url = base_url or os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
         self._api_key = api_key or os.environ.get("DEEPSEEK_API_KEY", "")
-        if not self._api_key:
-            raise RuntimeError("DEEPSEEK_API_KEY 未配置")
 
     async def generate(self, prompt: str, **kwargs: Any) -> SimpleCompletionResult:
+        if not self._api_key:
+            raise RuntimeError("DEEPSEEK_API_KEY 未配置")
+        
         model = kwargs.get("model", os.environ.get("DEEPSEEK_MODEL", "deepseek-chat"))
         messages = kwargs.get("messages") or [{"role": "user", "content": prompt}]
         payload = {
