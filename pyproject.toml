@@ -25,7 +25,7 @@ dependencies = [
     "fastembed",
     "langchain-core",
     "tiktoken",
-    "httpx[socks]"
+    "httpx[socks]",
 ]
 
 [project.optional-dependencies]
