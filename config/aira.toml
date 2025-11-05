@@ -2,7 +2,9 @@
 [app]
 name = "aira"
 default_persona = "aira"
-default_model = "gemini:gemini-2.5-flash"
+# 注意：Gemini 需要代理和 API 密钥
+# 可选：ollama:llama3, openai:gpt-4o-mini, openai:gpt-4o 等
+default_model = "gemini:gemini-2.0-flash-exp"  # Gemini模型（测试）
 uv_project = true
 
 [logging]
@@ -11,21 +13,20 @@ output = "logs/aira.log"
 structured = true
 
 ## 角色/人格定义
-[[personas]]
-id = "aira"
-display_name = "可塑性记忆的艾拉"
-description = "温柔、求知欲强、记忆可塑的持续对话伙伴"
-system_prompt = "你是艾拉，一位拥有可塑记忆的 AI 助手，会主动结合历史记忆提供贴心帮助。保持积极、理性、富有共情力。"
-memory_profile = "adaptive"
-style = { tone = "warm", formality = "casual", emoji = false }
+# 角色配置文件位于 config/profiles/charas/ 目录
+# 直接填写角色名称即可，系统会自动在 charas/ 目录查找对应的 .toml 文件
+# 可用角色：aira, atri, kohaku, kurisu, renge, youmu
 
-[[personas]]
-id = "planner"
-display_name = "策略规划官"
-description = "善于任务拆解与时间管理的助理"
-system_prompt = "你是一名策略规划官，擅长分解复杂目标、分配资源和管理风险。"
-memory_profile = "factual"
-style = { tone = "professional", formality = "formal", emoji = false }
+[persona]
+# 默认角色（直接填写名称）
+default = "aira"
+
+# 角色配置根目录
+profiles_dir = "config/profiles/charas"
+
+# 可选：预加载角色列表（用于多角色切换或多Agent场景）
+# 填写角色名称，系统自动查找 {profiles_dir}/{name}.toml
+available = ["aira", "atri", "kohaku", "kurisu", "renge", "youmu"]
 
 [memory]
 short_term_window = 12
@@ -35,6 +36,11 @@ embedding_model = "text-embedding-3-large"
 write_threshold = 0.65
 decay_hours = 240
 
+# 角色独立存储配置
+# 每个角色的记忆数据会存储在独立的命名空间中
+# 格式: {namespace}_{persona_id}
+persona_isolated = true  # 启用角色隔离
+
 [memory.categories]
 facts = { namespace = "facts", retention = "permanent" }
 preferences = { namespace = "preferences", retention = "long" }
@@ -42,7 +48,7 @@ emotions = { namespace = "emotions", retention = "medium" }
 
 [models]
 fallback = ["openrouter:gpt-4o-mini", "deepseek:v3"]
-planner = "gemini:gemini-2.5-pro"
+planner = ""  # 临时禁用，避免网络问题
 
 # Chain-of-Thought 配置
 # 为不支持原生思维链的模型提供外接CoT功能
@@ -83,104 +89,14 @@ show_reasoning = false  # 最终回复是否附带外部推理链
 "zhipuai:glm-4" = { text = true, code = true, image = false, video = false, multimodal = true, thinking = "analytical" }
 "openrouter:mistral-large" = { text = true, code = true, image = "depends", video = "depends", multimodal = true, thinking = "delegated" }
 
+# MCP配置
 [mcp]
 enabled = true
 config_file = "config/mcp_servers.json"
 
-
+# 工具配置（已移至 config/tools.toml）
 [tools]
-allowed = ["search", "web_browser", "code_runner"]
-default_timeout = 30
-
-[[tools.plugins]]
-id = "search"
-entry = "aira.tools.plugins.search:web_search"
-type = "local"
-schema = "schemas/search.json"
-
-[[tools.plugins]]
-id = "merge_lora"
-entry = "aira.tools.plugins.model_tools:merge_lora"
-type = "local"
-
-[[tools.plugins]]
-id = "quantize_model"
-entry = "aira.tools.plugins.model_tools:quantize_gguf"
-type = "local"
-
-[[tools.plugins]]
-id = "sticker_picker"
-entry = "aira.tools.plugins.sticker_tool:get_sticker"
-type = "local"
-
-[[tools.plugins]]
-id = "capture_photo"
-entry = "aira.tools.plugins.media:take_photo"
-type = "local"
-
-[[tools.plugins]]
-id = "screenshot"
-entry = "aira.tools.plugins.media:grab_screenshot"
-type = "local"
-
-[[tools.plugins]]
-id = "calendar"
-entry = "tools.plugins.calendar:CalendarTool"
-type = "mcp"
-mcp_server = "tickets"
-
-[[tools.plugins]]
-id = "live2d_action"
-entry = "aira.tools.plugins.live2d:perform_action"
-type = "local"
-
-[[tools.plugins]]
-id = "shell_exec"
-entry = "aira.tools.plugins.exec:run_shell"
-type = "local"
-
-[[tools.plugins]]
-id = "python_exec"
-entry = "aira.tools.plugins.exec:run_python"
-type = "local"
-
-[[tools.plugins]]
-id = "suggest_replies"
-entry = "aira.tools.plugins.suggestions:suggest_replies"
-type = "local"
-
-[[tools.plugins]]
-id = "todo_add"
-entry = "aira.tools.plugins.todo:todo_add"
-type = "local"
-
-[[tools.plugins]]
-id = "todo_list"
-entry = "aira.tools.plugins.todo:todo_list"
-type = "local"
-
-[[tools.plugins]]
-id = "todo_complete"
-entry = "aira.tools.plugins.todo:todo_complete"
-type = "local"
-
-[[tools.mcp_servers]]
-id = "filesystem"
-url = "http://localhost:8700"
-capabilities = ["list", "read", "write"]
-token = "${MCP_FS_TOKEN}"
-
-[[tools.mcp_servers]]
-id = "tickets"
-url = "https://mcp.example.com/tickets"
-capabilities = ["create", "update"]
-token = "${MCP_TICKET_TOKEN}"
-
-[[tools.plugins]]
-id = "comfyui_generate"
-entry = "tools.mcp.comfyui:GenerateImage"
-type = "mcp"
-mcp_server = "comfyui"
+config_file = "config/tools.toml"
 
 [stats]
 enabled = true
@@ -200,9 +116,19 @@ sse_enabled = true
 max_concurrency = 64
 
 [storage]
+# 数据库配置
 sqlite_path = "data/aira.db"
 vector_index_path = "data/vector.idx"
 embedding_model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+# 角色独立存储
+# 每个角色的数据会存储在独立的表/命名空间中
+persona_isolated = true
+
+# 存储路径模板（使用 {persona_id} 作为占位符）
+# 示例: data/memory/aira/, data/memory/kurisu/
+memory_path_template = "data/memory/{persona_id}/"
+vector_path_template = "data/vectors/{persona_id}/"
 
 [cli]
 enable_persona_switch = true
@@ -220,50 +146,233 @@ secret_provider = "env"
 "vllm:qwen2.5" = { input_per_million = 0.0, output_per_million = 0.0 }
 "ollama:qwen2.5" = { input_per_million = 0.0, output_per_million = 0.0 }
 
-[[tools.plugins]]
-id = "tts_minimax"
-entry = "aira.tools.plugins.tts:tts_minimax"
-type = "local"
 
-[[tools.plugins]]
-id = "tts_edgetts"
-entry = "aira.tools.plugins.tts:tts_edgetts"
-type = "local"
-
-[[tools.plugins]]
-id = "tts_google"
-entry = "aira.tools.plugins.tts:tts_google"
-type = "local"
-
-[[tools.plugins]]
-id = "tts_azure"
-entry = "aira.tools.plugins.tts:tts_azure"
-type = "local"
-
-[[tools.plugins]]
-id = "tts_indextts"
-entry = "aira.tools.plugins.tts:tts_index"
-type = "local"
-
-[[tools.plugins]]
-id = "tts_gptsovits"
-entry = "aira.tools.plugins.tts:tts_gptsovits"
-type = "local"
-
-[[tools.plugins]]
-id = "tts_cosyvoice"
-entry = "aira.tools.plugins.tts:tts_cosyvoice"
-type = "local"
-
-[[tools.plugins]]
-id = "self_chat"
-entry = "aira.tools.plugins.self_chat:self_chat"
-type = "local"
-
+# TTS（Text-to-Speech）配置
 [tts]
 enabled = true
+default_provider = "edge"  # 默认提供商: minimax, azure, google, edge
+auto_play = false  # 是否自动播放生成的音频
+auto_translate = false  # 是否启用自动翻译（文本语言与目标语言不匹配时）
+target_language = ""  # 目标语言（如ja, en, zh等），为空则使用auto_detect_language
+
+# TTS提供商配置
+[tts.providers.minimax]
+enabled = true
+default_voice = "female-shaonv"  # 默认语音
+model = "speech-01"  # 模型版本
+sample_rate = 24000
+bitrate = 128000
+
+[tts.providers.azure]
+enabled = true
+default_voice = "zh-CN-XiaoxiaoNeural"  # 默认语音
+region = "eastus"  # Azure区域
+format = "audio-24khz-96kbitrate-mono-mp3"
+
+[tts.providers.google]
+enabled = true
+default_voice = "cmn-CN-Wavenet-A"  # 默认语音
+encoding = "MP3"
+sample_rate = 24000
+effects = []  # 音效配置，如 ["telephony-class-application"]
+
+[tts.providers.edge]
+enabled = true
+default_voice = "zh-CN-XiaoxiaoNeural"  # 默认语音（免费）
+
+# 默认TTS参数
+[tts.defaults]
+language = "zh-CN"
+speed = 1.0  # 语速 (0.5 - 2.0)
+pitch = 1.0  # 音调 (0.5 - 2.0)
+volume = 1.0  # 音量 (0.0 - 2.0)
+format = "mp3"
+
+# Translation（翻译）配置
+[translation]
+enabled = true
+model = "openai:gpt-4o-mini"  # 翻译使用的模型（推荐使用小模型）
+max_retries = 2  # 翻译失败重试次数
+cache_enabled = true  # 是否启用翻译缓存
+timeout = 30  # 翻译超时时间（秒）
+
+# ASR（Automatic Speech Recognition）配置
+[asr]
+enabled = true
+default_provider = "faster_whisper"  # whisper, azure_speech, google_speech, faster_whisper
+auto_language_detection = true  # 自动检测语言
+
+# ASR提供商配置
+[asr.providers.whisper]
+enabled = true
+model = "whisper-1"  # OpenAI Whisper API模型
+
+[asr.providers.azure_speech]
+enabled = true
+region = "eastus"  # Azure区域
+
+[asr.providers.google_speech]
+enabled = true
+model = "default"  # 识别模型：default, command_and_search, phone_call, video
+
+[asr.providers.faster_whisper]
+enabled = true
+model = "base"  # 模型大小：tiny, base, small, medium, large
+device = "cpu"  # 运行设备：cpu, cuda
+compute_type = "int8"  # 计算精度：int8, float16, float32
+
+# 默认ASR参数
+[asr.defaults]
+language = "zh"  # 默认语言（None为自动检测）
+task = "transcribe"  # transcribe 或 translate
+temperature = 0.0  # 采样温度 (0.0-1.0)
+enable_timestamps = false  # 是否返回时间戳
+enable_word_timestamps = false  # 是否返回单词级时间戳
 
 [hardware]
 use_gpu = false
 hf_device_map = "cpu"
+
+# ============================================
+# 高级功能配置
+# ============================================
+
+# 1. 人格进化配置 - 让AI性格随交互进化
+[persona_evolution]
+enabled = true                      # 启用人格进化
+storage_dir = "data/evolution"      # 进化数据存储根目录
+auto_save_interval = 10             # 每N次交互自动保存
+enable_trait_drift = true           # 允许特征自然漂移
+
+# 角色独立进化
+# 每个角色的进化数据会存储在独立的子目录中
+# 格式: {storage_dir}/{persona_id}/
+persona_isolated = true             # 启用角色隔离
+# 示例路径:
+#   - data/evolution/aira/traits.json
+#   - data/evolution/kurisu/traits.json
+#   - data/evolution/atri/traits.json
+
+# 特征调整灵敏度（值越大，变化越快）
+[persona_evolution.sensitivity]
+warmth = 0.02          # 温暖度
+humor = 0.015          # 幽默感
+formality = 0.01       # 正式度
+enthusiasm = 0.01      # 热情度
+empathy = 0.025        # 共情力（对负面情绪更敏感）
+curiosity = 0.02       # 好奇心
+assertiveness = 0.015  # 自信度
+
+# 2. 视觉认知配置 - 通过摄像头理解用户
+[vision]
+enabled = false                     # 默认关闭（需要摄像头）
+camera_id = 0                       # 摄像头ID（0为默认摄像头）
+enable_emotion_detection = true     # 启用表情识别
+enable_posture_detection = true     # 启用姿态检测
+capture_interval = 1.0              # 捕获间隔（秒）
+history_smoothing = 5               # 历史平滑窗口（减少抖动）
+
+# 识别模型选择
+[vision.models]
+emotion_model = "mediapipe"         # 表情模型: mediapipe, fer, deepface
+posture_model = "mediapipe"         # 姿态模型: mediapipe, openpose
+
+# 使用建议：
+# - 首次使用建议先用 mediapipe（快速、轻量）
+# - 需要更高精度可改用 deepface（较慢）
+# - 确保摄像头权限已授予
+
+# 3. 3D Avatar配置 - 情绪驱动的3D表达
+[avatar]
+enabled = false                     # 默认关闭（需要Unity服务）
+platform = "unity3d"                # 平台: unity3d, vroid, live2d, threejs
+unity_url = "http://localhost:8765" # Unity WebSocket服务地址
+vrm_model_path = ""                 # VRoid模型路径（可选）
+
+# Avatar行为配置
+[avatar.behavior]
+auto_react_to_user = true           # 自动响应用户状态
+enable_lip_sync = true              # 启用口型同步
+enable_eye_tracking = true          # 启用眼球追踪
+gesture_frequency = 0.3             # 手势频率 (0.0-1.0)
+
+# 情绪到表情的映射强度
+[avatar.emotion_mapping]
+happy = 1.0         # 高兴
+sad = 0.8           # 悲伤
+angry = 0.7         # 生气
+surprised = 0.9     # 惊讶
+neutral = 0.5       # 中性
+
+# 使用建议：
+# - 需要先启动Unity服务端（参考 examples/unity_avatar_server.cs）
+# - 确保Unity端口与此配置匹配
+# - VRoid模型需要UniVRM插件支持
+
+# 4. 多Agent社交配置 - AI之间的对话
+[multi_agent]
+enabled = false                     # 默认关闭（按需启用）
+max_concurrent_scenes = 5           # 最大并发场景数
+default_max_turns = 20              # 默认最大对话轮数
+enable_relationship_tracking = true # 启用Agent关系追踪
+
+# Agent交互规则
+[multi_agent.rules]
+allow_interruption = false          # 是否允许打断
+turn_timeout = 30                   # 单轮超时（秒）
+min_response_delay = 0.5            # 最小回复延迟（秒，模拟思考）
+
+# 预定义场景模板
+[[multi_agent.scenarios]]
+id = "debate"
+name = "辩论场景"
+interaction_type = "debate"
+min_participants = 2
+max_participants = 4
+description = "适合探讨有争议的话题"
+
+[[multi_agent.scenarios]]
+id = "casual_chat"
+name = "闲聊场景"
+interaction_type = "casual_chat"
+min_participants = 2
+max_participants = 6
+description = "轻松的多人聊天"
+
+[[multi_agent.scenarios]]
+id = "teaching"
+name = "教学场景"
+interaction_type = "teaching"
+min_participants = 2
+max_participants = 10
+description = "一对多的教学互动"
+
+# 使用建议：
+# - 先注册多个Agent（不同persona）
+# - 创建场景并运行
+# - 可以自定义更多场景类型
+
+
+# ============================================
+# 快速启用所有高级功能（测试用）
+# ============================================
+
+# 取消以下注释以快速启用所有功能：
+# [persona_evolution]
+# enabled = true
+#
+# [vision]
+# enabled = true
+#
+# [avatar]
+# enabled = true
+#
+# [multi_agent]
+# enabled = true
+
+# 注意：
+# - 视觉功能需要摄像头
+# - Avatar功能需要Unity服务运行
+# - 多Agent功能独立使用
+# - 人格进化无需额外配置即可使用
 

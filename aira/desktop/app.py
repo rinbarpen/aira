@@ -44,6 +44,30 @@ class DesktopApp:
 
 def run_desktop_app() -> None:
     """运行桌面应用的便捷函数。"""
-    from aira.desktop.main import main
-    main()
+    import sys
+    import asyncio
+    from qasync import QEventLoop
+    from PyQt6.QtWidgets import QApplication
+    from dotenv import load_dotenv
+    from aira.desktop.windows.main_window import MainWindow
+    
+    # 加载环境变量
+    load_dotenv()
+    
+    # 创建 Qt 应用
+    app = QApplication(sys.argv)
+    app.setApplicationName("AIRA Desktop")
+    app.setApplicationVersion("0.2.0")
+    
+    # 设置事件循环以支持异步
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+    
+    # 创建主窗口
+    main_window = MainWindow()
+    main_window.show()
+    
+    # 运行应用
+    with loop:
+        loop.run_forever()
 

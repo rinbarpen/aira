@@ -25,10 +25,9 @@ def main() -> None:
     # 设置事件循环以支持异步
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
-    
-    # 导入并创建主窗口（已集成增强功能）
+    # 导入并创建主窗口
     from aira.desktop.windows.main_window import MainWindow
-
+    
     main_window = MainWindow()
     main_window.show()
     

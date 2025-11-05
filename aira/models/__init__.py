@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from aira.core.config import get_app_config
 from aira.models.adapters.openai_chat import OpenAIChatAdapter
+from aira.models.adapters.openai_compatible import OpenAICompatibleAdapter
 from aira.models.adapters.ollama import OllamaAdapter
 from aira.models.adapters.vllm_openai import VllmOpenAIAdapter
 from aira.models.adapters.hf_local import HFLocalAdapter
@@ -59,6 +60,7 @@ def build_gateway() -> ModelGateway:
 
     raw_adapters: dict[str, ModelAdapter] = {
         "openai": OpenAIChatAdapter(),
+        "openai_compatible": OpenAICompatibleAdapter(),
         "vllm": VllmOpenAIAdapter(),
         "ollama": OllamaAdapter(),
         "hf": HFLocalAdapter(),
@@ -72,6 +74,7 @@ def build_gateway() -> ModelGateway:
 
     alias_map: dict[str, list[str]] = {
         "openai": ["openai:"],
+        "openai_compatible": ["openai_compatible:", "compatible:"],
         "vllm": ["vllm:"],
         "ollama": ["ollama:"],
         "hf": ["hf:"],
@@ -99,6 +102,7 @@ def build_gateway() -> ModelGateway:
         raise KeyError(f"未找到用于 CoT 嵌入的生成适配器: {cot_embedding_generator}")
 
     if cot_embedding_enabled:
+        assert generator_adapter is not None  # 已在上方检查，此处不应为None
         for name, adapter in list(adapters.items()):
             if name not in cot_embedding_targets:
                 continue

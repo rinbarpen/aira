@@ -55,6 +55,22 @@ desktop = [
     "faster-whisper>=0.10.0",
     "markdown>=3.5.2"
 ]
+vision = [
+    "opencv-python>=4.8.0",
+    "mediapipe>=0.10.0",
+    "numpy>=1.24.0",
+]
+avatar = [
+    "aiohttp>=3.9.0",
+    "websockets>=12.0",
+    "pillow>=10.0.0",
+]
+social = [
+    "networkx>=3.0",
+]
+full = [
+    "aira[desktop,vision,avatar,social,ml]"
+]
 
 [tool.uv]
 package = true
