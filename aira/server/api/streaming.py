@@ -67,11 +67,16 @@ def add_streaming_endpoint(app: FastAPI, orchestrator: DialogueOrchestrator) -> 
         if not message:
             return {"error": "message 字段不能为空"}
         
+        metadata: dict[str, Any] = dict(payload.get("metadata") or {})
+        metadata.setdefault("request_id", payload.get("request_id", "api"))
+        if payload.get("language") is not None:
+            metadata["language"] = payload.get("language")
+
         context = DialogueContext(
             session_id=payload.get("session_id", "default"),
             persona_id=payload.get("persona_id", config["app"]["default_persona"]),
             history=payload.get("history", []),
-            metadata={"request_id": payload.get("request_id", "api"), "language": payload.get("language")},
+            metadata=metadata,
         )
         
         return StreamingResponse(

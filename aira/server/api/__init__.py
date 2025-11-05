@@ -41,6 +41,11 @@ def create_app() -> FastAPI:
 
         # 检查是否请求流式响应
         use_stream = payload.get("stream", False)
+        metadata: dict[str, Any] = dict(payload.get("metadata") or {})
+        metadata.setdefault("request_id", payload.get("request_id", "api"))
+        if payload.get("language") is not None:
+            metadata["language"] = payload.get("language")
+
         if use_stream:
             # 重定向到流式端点
             from aira.server.api.streaming import generate_stream_response
@@ -50,10 +55,7 @@ def create_app() -> FastAPI:
                 session_id=payload.get("session_id", "default"),
                 persona_id=payload.get("persona_id", config["app"]["default_persona"]),
                 history=payload.get("history", []),
-                metadata={
-                    "request_id": payload.get("request_id", "api"),
-                    "language": payload.get("language"),
-                },
+                metadata=metadata,
             )
             
             return StreamingResponse(
@@ -66,10 +68,7 @@ def create_app() -> FastAPI:
             session_id=payload.get("session_id", "default"),
             persona_id=payload.get("persona_id", config["app"]["default_persona"]),
             history=payload.get("history", []),
-            metadata={
-                "request_id": payload.get("request_id", "api"),
-                "language": payload.get("language"),
-            },
+            metadata=metadata,
         )
         result = await orchestrator.handle_turn(context, message)
         return result

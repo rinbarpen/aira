@@ -113,23 +113,24 @@ class DialogueOrchestrator:
             except ToolExecutionError as exc:
                 tool_results.append({"tool": call["id"], "error": str(exc)})
 
-        await self._memory.store(
-            context.session_id,
-            MemoryRecord(content=user_input, category="interaction", score=1.0, metadata={}),
-        )
-        await self._memory.add_conversation(
-            context.session_id,
-            role="user",
-            content=user_input,
-        )
-        await self._memory.add_conversation(
-            context.session_id,
-            role="assistant",
-            content=reply,
-            model=model_name,
-            provider=model_name.split(":", 1)[0] if ":" in model_name else model_name,
-            thought=plan,
-        )
+        if not context.metadata.get("memory_barrier"):
+            await self._memory.store(
+                context.session_id,
+                MemoryRecord(content=user_input, category="interaction", score=1.0, metadata={}),
+            )
+            await self._memory.add_conversation(
+                context.session_id,
+                role="user",
+                content=user_input,
+            )
+            await self._memory.add_conversation(
+                context.session_id,
+                role="assistant",
+                content=reply,
+                model=model_name,
+                provider=model_name.split(":", 1)[0] if ":" in model_name else model_name,
+                thought=plan,
+            )
 
         return {
             "reply": reply,
